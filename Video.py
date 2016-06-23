@@ -3,28 +3,31 @@ import os
 import time
 import csv
 import random
-from pprint import pprint
+import argparse
 
 import numpy as np
 import cv2
 
-from Run import Run
+__author__ = 'Rik Smit'
 
-__author__ = 'rik'
+class Video:
 
-class Video(Run):
-
-    detections = None
-    cutoutRootDir = None
-    cutoutPosDir = None
-    cutoutNegDir = None
-    cutoutSize = (50, 50)
-    negExamplesPerFrame = 50
+    detections = None  # annotations for the video
+    cutoutRootDir = None  # root output directory
+    cutoutPosDir = None  # output directory for the positive samples
+    cutoutNegDir = None  # output directory for the negative samples
+    cutoutSize = (50, 50)  # size of the cutout samples
+    negExamplesPerFrame = 50  # amount of negative samples to cutout for each chosen frame
     framesStep = 25  # use every <frameStep>th frame
 
-    RESIZE_CUTOUTS = False
-
     def __init__(self, videoFileName, annotationsFileName):
+        """
+        Loads a video recording with the annotations (e.g. made by Vatic)
+
+        :param videoFileName:
+        :param annotationsFileName:
+        """
+
         if not os.path.isfile(videoFileName):
             raise Exception("No such file %s" % videoFileName)
         if not os.path.isfile(annotationsFileName):
@@ -39,6 +42,10 @@ class Video(Run):
         self.detections = self.getAnnotations()
 
     def getAnnotations(self):
+        """
+        Read the annotatinos from file
+        :return:
+        """
         reader = csv.reader(open(self.annotationsFileName, 'rb'), delimiter=' ')
 
         detections = {}
@@ -58,6 +65,15 @@ class Video(Run):
         return detections
 
     def extractObjects(self, cutoutDir, extractPositives=True, extractNegatives=True, convertToGray=False):
+        """
+        Extract the sample images from the video using the annotations
+
+        :param cutoutDir:
+        :param extractPositives:
+        :param extractNegatives:
+        :param convertToGray:
+        :return:
+        """
         if (not extractPositives) and (not extractNegatives):
             print("No task given...")
             return
@@ -137,7 +153,14 @@ class Video(Run):
 
 
     def cutoutPositiveDetections(self, img, frameIdx):
-        # get detections for this frame
+        """
+        Cutout the positive detections for this frame
+
+        :param img:
+        :param frameIdx:
+        :return:
+        """
+
         if frameIdx in self.detections:
             frameDetections = self.detections[frameIdx]
 
@@ -150,14 +173,19 @@ class Video(Run):
                 cutout = img[cutoutDimensions['ymin']:cutoutDimensions['ymax'], cutoutDimensions['xmin']:cutoutDimensions['xmax']]
                 cutoutFileName = os.path.join(self.cutoutPosDir, "cutout_%d_%d.png" % (cutoutDimensions['value'], frameIdx))
 
-                if self.RESIZE_CUTOUTS:
-                    cutout = cv2.resize(cutout, self.cutoutSize)
-
                 print("Writing pos detection %s" % cutoutFileName)
                 cv2.imwrite(cutoutFileName, cutout)
 
 
     def cutoutNegativeDetections(self, img, frameIdx):
+        """
+        Cutout the negative detections for this frame
+
+        :param img:
+        :param frameIdx:
+        :return:
+        """
+
         demo = False # shows where the negatives are cutout (if True)
         if demo:
             demoImg = img.copy()
@@ -230,7 +258,15 @@ class Video(Run):
         return not np.count_nonzero(cutoutMask)
 
     def show(self, includeAnnotations=True):
+        """
+        Display the video
+
+        :param includeAnnotations:
+        :return:
+        """
+
         cap = cv2.VideoCapture(self.videoFileName)
+
 
         frameIdx = 0
         while cap.isOpened():
@@ -257,3 +293,19 @@ class Video(Run):
 
         cap.release()
         cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Show a video with its annotations.')
+    parser.add_argument('videofile', help='Location of the video file')
+    parser.add_argument('annotationsfile', help='Location of the annotations file')
+
+    args = parser.parse_args()
+
+    videoFileName = args.videofile
+    annotationsFileName = args.annotationsfile
+
+    video = Video(videoFileName, annotationsFileName)
+    video.load()
+    video.show()
+
+

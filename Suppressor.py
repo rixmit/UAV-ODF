@@ -1,12 +1,3 @@
-import os
-import sys
-import glob
-from pprint import pprint
-from random import shuffle
-import math
-import itertools
-import logging
-
 import numpy as np
 
 class Suppressor():
@@ -15,6 +6,7 @@ class Suppressor():
         pass
 
     # Malisiewicz et al.
+    # See also http://www.pyimagesearch.com/2015/02/16/faster-non-maximum-suppression-python/
     def non_max_suppression_fast(self, boxes, overlapThresh):
         # if there are no boxes, return an empty list
         if len(boxes) == 0:

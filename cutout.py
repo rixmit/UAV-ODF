@@ -2,7 +2,7 @@ import argparse
 
 from Video import Video
 
-__author__ = 'rik'
+__author__ = 'Rik Smit'
 
 
 parser = argparse.ArgumentParser(description='Creating cutous from video using Vatic annotations.')
